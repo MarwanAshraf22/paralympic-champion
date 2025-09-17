@@ -2,14 +2,14 @@ import React, { useMemo, useState } from "react";
 
 /**
  * Paralympic Champion — LA 2028 (Vite + Tailwind)
- * - Logo-themed UI (blue gradient + gold accent)
- * - Featured banner always visible
- * - Main page opens first; drawer opens on click
- * - Full-width cards: Bio, Training, Goals (each one individual)
- * - Full-width performance tables (100m / 800m)
+ * - Logo-themed UI (blue gradient + gold accent feel)
+ * - Main page opens first; profile drawer opens on click
+ * - Full-width cards for Bio, Training, Goals
+ * - Full-width tables for 100m/800m
+ * - Camps 1–12 included (added 8–12)
  */
 
-/* ---------- Brand helpers (Tailwind blues + amber) ---------- */
+/* ---------- Brand helpers ---------- */
 const brand = {
   grad: "bg-gradient-to-r from-blue-700 to-blue-400",
   blueText: "text-blue-800",
@@ -51,17 +51,9 @@ type CampRow = {
   remarks?: string;
 };
 
-type RecordsSnapshot = {
-  event: "100m" | "800m";
-  worldRecord: string;
-  regionalRecord?: string;
-  best?: { time: string; datePlace?: string; rank?: string };
-};
-
 type Player = {
   id: string;
   name: string;
-  nationality?: string;
   classification?: string;
   disability?: string;
   photo?: string;
@@ -76,21 +68,11 @@ type Player = {
   trainingYears?: string;
   trainingRate?: string;
   supportLevel?: string;
-  notes?: string;
-
   highlights?: string[];
-
+  training?: { period?: string; annualPlan?: string };
   comps100m?: CompetitionRow[];
   comps800m?: CompetitionRow[];
-  records?: RecordsSnapshot[];
   camps?: CampRow[];
-
-  medical?: { cadence?: string };
-  psychological?: { program?: string };
-  nutrition?: { plan?: string; supplements?: string[] };
-  training?: { period?: string; annualPlan?: string };
-  recovery?: { sessions?: string[] };
-  assessments?: { schedule?: string; physiological?: string[]; anthropometric?: string[] };
 };
 
 /* ---------- Sports & data ---------- */
@@ -122,7 +104,10 @@ const PLAYERS: Player[] = [
     club: "Dubai Club for People of Determination",
     events: ["100m", "800m"],
     coach: "(to be assigned)",
-    goals: ["Achieve a medal at Los Angeles 2028", "Top-three in 100m & 800m for 2025 pathway"],
+    goals: [
+      "Achieve a medal at Los Angeles 2028",
+      "Top-three in 100m & 800m for 2025 pathway",
+    ],
     trainingYears: "10 Years",
     trainingRate: "5 days/week, ~2 hours per session",
     supportLevel: "Great support from family and friends",
@@ -131,15 +116,9 @@ const PLAYERS: Player[] = [
       "Grand Prix Switzerland — 100m 14.84 (3rd)",
       "Sharjah Intl. — 800m 1:40.46 (2nd)",
     ],
-    medical: { cadence: "Full checkup every 6 months; screenings as needed" },
-    psychological: { program: "Customized sessions with sports psychologist" },
-    nutrition: { plan: "Nutritionist-led plan after medical tests", supplements: ["Vitamins", "Minerals"] },
-    training: { period: "Nov 2024 – Jul 2028", annualPlan: "Macrocycle with quarterly evaluations and camps" },
-    recovery: { sessions: ["Weekly contrast therapy", "Bi-weekly massage", "Sleep hygiene focus"] },
-    assessments: {
-      schedule: "Pre/post every 3 months",
-      physiological: ["HRV", "VO₂ proxy / lactate where applicable"],
-      anthropometric: ["Body composition", "Key circumferences"],
+    training: {
+      period: "Nov 2024 – Jul 2028",
+      annualPlan: "Macrocycle with quarterly evaluations and camps",
     },
     comps100m: [
       { event: "100m", name: "Sharjah International Meeting", place: "Sharjah (UAE)", dates: "02–04 Feb 2025", target: "0:15.40", goal: "Prep for Fazza / achieve MS", achievable: "Achievable", achieved: "0:15.21", rank: "1st" },
@@ -159,10 +138,7 @@ const PLAYERS: Player[] = [
       { event: "800m", name: "Polish International Championship", place: "Poland", dates: "05 Aug–15 Sep 2025", target: "01:36:00–01:36:50", goal: "Personal number + world ranking", achievable: "Achievable" },
       { event: "800m", name: "World Championship", place: "India", dates: "23 Sep–06 Oct 2025", target: "01:36:00–01:36:50", goal: "Personal number + world ranking", achievable: "Achievable" },
     ],
-    records: [
-      { event: "100m", worldRecord: "0:14.56", regionalRecord: "0:14.84", best: { time: "0:14.84", datePlace: "24 May 2025 / Nottwil, Switzerland", rank: "3rd" } },
-      { event: "800m", worldRecord: "1:39.72", regionalRecord: "1:40.45", best: { time: "1:40.46", datePlace: "02 Feb 2025 / Sharjah, UAE" } },
-    ],
+    /* ---- Camps & Competitions Plan (1–12) ---- */
     camps: [
       { dates: "30 Nov 2024 – 10 Jan 2025", days: 41, place: "Tunisia", label: "International training camp" },
       { dates: "11 Jan – 01 Feb 2025", days: 21, place: "Dubai", label: "Local training camp", remarks: "Shared with Tunisian team (3 players + coach)" },
@@ -171,6 +147,12 @@ const PLAYERS: Player[] = [
       { dates: "26 Feb – 03 Apr 2025", days: 36, place: "Tunisia", label: "International training camp" },
       { dates: "05 – 24 Apr 2025", days: 20, place: "Dubai", label: "Shared with Tunisian team (3 players + coach)" },
       { dates: "24 Apr – 16 May 2025", days: 23, place: "Tunisia", label: "International training camp / hosting" },
+      // NEW: 8–12
+      { dates: "18 May – 02 Jun 2025", days: 12, place: "Switzerland", label: "Swiss Grand Prix / Daniela Swiss / Jutzeler Memorial Nationals" },
+      { dates: "07 Jun – 15 Jul 2025", days: 38, place: "Tunisia", label: "Outdoor Camp" },
+      { dates: "15 Jul – 14 Aug 2025", days: 30, place: "Poland", label: "Outdoor Camp" },
+      { dates: "14 Aug – 18 Sep 2025", days: 35, place: "Tunisia", label: "Outdoor Camp" },
+      { dates: "22 Sep – 06 Oct 2025", days: 13, place: "India", label: "World Championship" },
     ],
   },
 ];
@@ -310,7 +292,7 @@ const FeaturedAthlete: React.FC<{ p: Player; onOpenProfile: () => void }> = ({
   </section>
 );
 
-/* ---------- Player Drawer (Bio, Training, Goals are each individual full-width cards) ---------- */
+/* ---------- Player Drawer ---------- */
 const PlayerDrawer: React.FC<{ player: Player | null; onClose: () => void }> = ({
   player,
   onClose,
@@ -378,7 +360,7 @@ const PlayerDrawer: React.FC<{ player: Player | null; onClose: () => void }> = (
           </Card>
         </div>
 
-        {/* Performance tables: full width, one per card */}
+        {/* Performance tables */}
         <div className="mt-6 space-y-4">
           <Card title="100m T34 — Targets & Results (2025)">
             <MiniTable<CompetitionRow>
@@ -438,8 +420,7 @@ export default function App() {
   const rosterBySport = useRosterBySport(PLAYERS);
   const [active, setActive] = useState<SportKey>("para_athletics");
   const [query, setQuery] = useState("");
-  // MAIN page first (drawer closed)
-  const [focus, setFocus] = useState<Player | null>(null);
+  const [focus, setFocus] = useState<Player | null>(null); // MAIN page first
 
   const filtered = (rosterBySport[active] || []).filter((p) =>
     [p.name, p.events?.join(" ")].join(" ").toLowerCase().includes(query.toLowerCase())
@@ -456,9 +437,7 @@ export default function App() {
             <img src="/logo.png" alt="Club Logo" className="h-10 w-auto object-contain" />
             <div>
               <h1 className={`text-lg font-bold ${brand.blueText}`}>Paralympic Champion Project</h1>
-              <p className="text-xs text-slate-500">
-                Los Angeles 2028 — Dubai Club for People of Determination
-              </p>
+              <p className="text-xs text-slate-500">Los Angeles 2028 — Dubai Club for People of Determination</p>
             </div>
           </div>
           <div className="text-right">
@@ -542,11 +521,7 @@ export default function App() {
                   />
                 ) : (
                   <div className="h-16 w-16 rounded-xl bg-slate-100 grid place-items-center text-slate-500 text-xl">
-                    {p.name
-                      .split(" ")
-                      .map((w) => w[0])
-                      .slice(0, 2)
-                      .join("")}
+                    {p.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
                   </div>
                 )}
                 <div className="flex-1">
