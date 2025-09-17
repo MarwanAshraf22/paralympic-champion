@@ -44,7 +44,6 @@ type CompetitionRow = {
 };
 
 type CampRow = {
-  No: Number;
   dates: string;
   days?: string | number;
   place: string;
@@ -141,19 +140,19 @@ const PLAYERS: Player[] = [
     ],
     /* ---- Camps & Competitions Plan (1–12) ---- */
     camps: [
-      { No: 1, dates: "30 Nov 2024 – 10 Jan 2025", days: 41, place: "Tunisia", label: "International training camp" },
-      { No: 1, dates: "11 Jan – 01 Feb 2025", days: 21, place: "Dubai", label: "Local training camp", remarks: "Shared with Tunisian team (3 players + coach)" },
-      { No: 1, dates: "02 – 04 Feb 2025", days: 3, place: "Sharjah", label: "Sharjah International Meeting" },
-      { No: 1, dates: "06 – 13 Feb 2025", days: 7, place: "Dubai", label: "16th Fazza Grand Prix" },
-      { No: 1, dates: "26 Feb – 03 Apr 2025", days: 36, place: "Tunisia", label: "International training camp" },
-      { No: 1, dates: "05 – 24 Apr 2025", days: 20, place: "Dubai", label: "Shared with Tunisian team (3 players + coach)" },
-      { No: 1, dates: "24 Apr – 16 May 2025", days: 23, place: "Tunisia", label: "International training camp / hosting" },
+      { dates: "30 Nov 2024 – 10 Jan 2025", days: 41, place: "Tunisia", label: "International training camp" },
+      { dates: "11 Jan – 01 Feb 2025", days: 21, place: "Dubai", label: "Local training camp", remarks: "Shared with Tunisian team (3 players + coach)" },
+      { dates: "02 – 04 Feb 2025", days: 3, place: "Sharjah", label: "Sharjah International Meeting" },
+      { dates: "06 – 13 Feb 2025", days: 7, place: "Dubai", label: "16th Fazza Grand Prix" },
+      { dates: "26 Feb – 03 Apr 2025", days: 36, place: "Tunisia", label: "International training camp" },
+      { dates: "05 – 24 Apr 2025", days: 20, place: "Dubai", label: "Shared with Tunisian team (3 players + coach)" },
+      { dates: "24 Apr – 16 May 2025", days: 23, place: "Tunisia", label: "International training camp / hosting" },
       // NEW: 8–12
-      { No: 1, dates: "18 May – 02 Jun 2025", days: 12, place: "Switzerland", label: "Swiss Grand Prix / Daniela Swiss / Jutzeler Memorial Nationals" },
-      { No: 1, dates: "07 Jun – 15 Jul 2025", days: 38, place: "Tunisia", label: "Outdoor Camp" },
-      { No: 1, dates: "15 Jul – 14 Aug 2025", days: 30, place: "Poland", label: "Outdoor Camp" },
-      { No: 1, dates: "14 Aug – 18 Sep 2025", days: 35, place: "Tunisia", label: "Outdoor Camp" },
-      { No: 1, dates: "22 Sep – 06 Oct 2025", days: 13, place: "India", label: "World Championship" },
+      { dates: "18 May – 02 Jun 2025", days: 12, place: "Switzerland", label: "Swiss Grand Prix / Daniela Swiss / Jutzeler Memorial Nationals" },
+      { dates: "07 Jun – 15 Jul 2025", days: 38, place: "Tunisia", label: "Outdoor Camp" },
+      { dates: "15 Jul – 14 Aug 2025", days: 30, place: "Poland", label: "Outdoor Camp" },
+      { dates: "14 Aug – 18 Sep 2025", days: 35, place: "Tunisia", label: "Outdoor Camp" },
+      { dates: "22 Sep – 06 Oct 2025", days: 13, place: "India", label: "World Championship" },
     ],
   },
 ];
