@@ -1,0 +1,667 @@
+// src/App.tsx
+import React, { useMemo, useState } from "react";
+
+/* ------------------------------------------------------------
+   Paralympic Champion — LA 2028
+   - Logo-matched UI (blue gradient + gold accent, soft cards)
+   - Featured Athlete banner visible on all tabs
+   - Detailed athlete profile drawer with targets/results/camps
+   - Pure React + Tailwind (no extra deps)
+-------------------------------------------------------------*/
+
+// ---------- Brand helpers (using standard Tailwind blues/amber)
+const brand = {
+  grad: "bg-gradient-to-r from-blue-700 to-blue-400",
+  blueText: "text-blue-700",
+  chip: "bg-blue-50 text-blue-700 border-blue-200",
+  chipAlt: "bg-amber-50 text-amber-800 border-amber-200",
+  accentBtn: "bg-[#7b0a16] text-white hover:opacity-90", // maroon accent you liked
+};
+
+// ---------- Types
+export type SportKey =
+  | "para_athletics"
+  | "para_powerlifting"
+  | "shooting_para_sport"
+  | "para_cycling"
+  | "para_badminton"
+  | "boccia"
+  | "para_fencing"
+  | "para_triathlon"
+  | "para_climbing"
+  | "para_taekwondo"
+  | "para_equestrian";
+
+type CompetitionRow = {
+  event: "100m" | "800m";
+  name: string;
+  place?: string;
+  dates?: string;
+  target?: string;
+  goal?: string;
+  achievable?: "Achievable" | "—";
+  achieved?: string;
+  rank?: string;
+};
+
+type CampRow = {
+  dates: string;
+  days?: string | number;
+  place: string;
+  label: string;
+  remarks?: string;
+};
+
+type RecordsSnapshot = {
+  event: "100m" | "800m";
+  worldRecord: string;
+  regionalRecord?: string;
+  best?: { time: string; datePlace?: string; rank?: string };
+};
+
+type Player = {
+  id: string;
+  name: string;
+  nationality?: string;
+  classification?: string;
+  disability?: string;
+  photo?: string;
+  dob?: string;
+  education?: string;
+  maritalStatus?: string;
+  club?: string;
+  sport: SportKey;
+  events?: string[];
+  coach?: string;
+  goals?: string[];
+  trainingYears?: string;
+  trainingRate?: string;
+  supportLevel?: string;
+  notes?: string;
+
+  comps100m?: CompetitionRow[];
+  comps800m?: CompetitionRow[];
+  records?: RecordsSnapshot[];
+  camps?: CampRow[];
+
+  medical?: { cadence?: string };
+  psychological?: { program?: string };
+  nutrition?: { plan?: string; supplements?: string[] };
+  training?: { period?: string; annualPlan?: string };
+  recovery?: { sessions?: string[] };
+  assessments?: { schedule?: string; physiological?: string[]; anthropometric?: string[] };
+};
+
+// ---------- Sports & seed data
+const SPORTS: { key: SportKey; label: string; status: "targeted" | "new_targeted" }[] = [
+  { key: "para_powerlifting", label: "Para Powerlifting", status: "targeted" },
+  { key: "para_athletics", label: "Para Athletics", status: "targeted" },
+  { key: "shooting_para_sport", label: "Shooting Para Sport", status: "targeted" },
+  { key: "para_cycling", label: "Para Cycling", status: "targeted" },
+  { key: "para_badminton", label: "Para Badminton", status: "targeted" },
+  { key: "boccia", label: "Boccia", status: "targeted" },
+  { key: "para_fencing", label: "Para Fencing", status: "new_targeted" },
+  { key: "para_triathlon", label: "Para Triathlon", status: "new_targeted" },
+  { key: "para_climbing", label: "Para Climbing", status: "new_targeted" },
+  { key: "para_taekwondo", label: "Para Taekwondo", status: "new_targeted" },
+  { key: "para_equestrian", label: "Para Equestrian", status: "new_targeted" },
+];
+
+// Full data for Mohammad Youssef
+const PLAYERS: Player[] = [
+  {
+    id: "ath-001",
+    name: "Mohammad Youssef Mohammad Othman",
+    sport: "para_athletics",
+    photo: "/mohammad-youssef.png",
+    classification: "T34",
+    disability: "Cerebral palsy / spastic diplegic (walking with spastic gait)",
+    dob: "16/01/2004",
+    education: "High school graduate",
+    maritalStatus: "Single",
+    club: "Dubai Club for People of Determination",
+    events: ["100m", "800m"],
+    coach: "(to be assigned)",
+    goals: ["Achieve a medal at Los Angeles 2028", "Top-three in 100m & 800m for 2025 pathway"],
+    trainingYears: "10 Years",
+    trainingRate: "5 days/week, ~2 hours per session",
+    supportLevel: "Great support from family and friends",
+    notes:
+      "Candidate within the Paralympic Champion Project long-list. Short-list and LA 2028 participants to be finalized by 2027–2028.",
+    medical: { cadence: "Full checkup every 6 months; screenings as needed" },
+    psychological: { program: "Customized sessions with sports psychologist" },
+    nutrition: { plan: "Nutritionist-led plan after medical tests", supplements: ["Vitamins", "Minerals"] },
+    training: { period: "Nov 2024 – Jul 2028", annualPlan: "Macrocycle with quarterly evaluations and camps" },
+    recovery: { sessions: ["Weekly contrast therapy", "Bi-weekly massage", "Sleep hygiene focus"] },
+    assessments: {
+      schedule: "Pre/post every 3 months",
+      physiological: ["HRV", "VO₂ proxy / lactate where applicable"],
+      anthropometric: ["Body composition", "Key circumferences"],
+    },
+    comps100m: [
+      { event: "100m", name: "Sharjah International Meeting", place: "Sharjah (UAE)", dates: "02–04 Feb 2025", target: "0:15.40", goal: "Prep for Fazza / achieve MS", achievable: "Achievable", achieved: "0:15.21", rank: "1st" },
+      { event: "100m", name: "Fazza Grand Prix", place: "Dubai (UAE)", dates: "06–13 Feb 2025", target: "0:15.20", goal: "Get one of three medals", achievable: "Achievable", achieved: "0:15.61", rank: "1st" },
+      { event: "100m", name: "Grand Prix Switzerland", place: "Switzerland", dates: "22–30 May 2025", target: "0:15.20", goal: "Get one of three medals", achievable: "Achievable", achieved: "0:14.84", rank: "3rd" },
+      { event: "100m", name: "Daniela/Jutzeler Championship", place: "Switzerland", dates: "30 May 2025", target: "0:15.15", goal: "Get one of three medals", achievable: "Achievable", achieved: "0:15.18", rank: "2nd" },
+      { event: "100m", name: "Swiss National Open", place: "Switzerland", dates: "31 May–01 Jun 2025", target: "0:15.00", goal: "Get one of three medals", achievable: "Achievable", achieved: "0:14.94", rank: "2nd" },
+      { event: "100m", name: "Polish International Championship", place: "Poland", dates: "05 Aug–15 Sep 2025", target: "0:15.00–0:14.60", goal: "Preparing for World Championship", achievable: "Achievable" },
+      { event: "100m", name: "World Championship", place: "India", dates: "23 Sep–06 Oct 2025", target: "0:15.00–0:14.60", goal: "Get one of three medals", achievable: "Achievable" },
+    ],
+    comps800m: [
+      { event: "800m", name: "Sharjah International Meeting", place: "Sharjah (UAE)", dates: "02–04 Feb 2025", target: "1:45.00", goal: "Prep for Fazza / achieve MS", achievable: "Achievable", achieved: "1:40.46", rank: "2nd" },
+      { event: "800m", name: "Fazza Grand Prix", place: "Dubai (UAE)", dates: "06–13 Feb 2025", target: "1:44.00", goal: "Participation & experience", achievable: "Achievable", achieved: "1:42.33", rank: "3rd" },
+      { event: "800m", name: "Grand Prix Switzerland", place: "Switzerland", dates: "22–30 May 2025", target: "1:42.00", goal: "Personal number + world ranking", achievable: "Achievable", achieved: "01:42:08", rank: "3rd" },
+      { event: "800m", name: "Daniel Championship Switzerland", place: "Switzerland", dates: "30 May 2025", target: "-", goal: "-", achievable: "—" },
+      { event: "800m", name: "Swiss National Open", place: "Switzerland", dates: "31 May–01 Jun 2025", target: "01:42:00", goal: "Personal number + world ranking", achievable: "Achievable", achieved: "1:36.70", rank: "3rd" },
+      { event: "800m", name: "Polish International Championship", place: "Poland", dates: "05 Aug–15 Sep 2025", target: "01:36:00–01:36:50", goal: "Personal number + world ranking", achievable: "Achievable" },
+      { event: "800m", name: "World Championship", place: "India", dates: "23 Sep–06 Oct 2025", target: "01:36:00–01:36:50", goal: "Personal number + world ranking", achievable: "Achievable" },
+    ],
+    records: [
+      { event: "100m", worldRecord: "0:14.56", regionalRecord: "0:14.84", best: { time: "0:14.84", datePlace: "24 May 2025 / Nottwil, Switzerland", rank: "3rd" } },
+      { event: "800m", worldRecord: "1:39.72", regionalRecord: "1:40.45", best: { time: "1:40.46", datePlace: "02 Feb 2025 / Sharjah, UAE" } },
+    ],
+    camps: [
+      { dates: "30 Nov 2024 – 10 Jan 2025", days: 41, place: "Tunisia", label: "International training camp" },
+      { dates: "11 Jan – 01 Feb 2025", days: 21, place: "Dubai", label: "Local training camp", remarks: "Shared with Tunisian team (3 players + coach)" },
+      { dates: "02 – 04 Feb 2025", days: 3, place: "Sharjah", label: "Sharjah International Meeting" },
+      { dates: "06 – 13 Feb 2025", days: 7, place: "Dubai", label: "16th Fazza Grand Prix" },
+      { dates: "26 Feb – 03 Apr 2025", days: 36, place: "Tunisia", label: "International training camp" },
+      { dates: "05 – 24 Apr 2025", days: 20, place: "Dubai", label: "Shared with Tunisian team (3 players + coach)" },
+      { dates: "24 Apr – 16 May 2025", days: 23, place: "Tunisia", label: "International training camp / hosting" },
+    ],
+  },
+];
+
+// ---------- Helpers
+const useRosterBySport = (players: Player[]) =>
+  useMemo(() => {
+    const map: Record<SportKey, Player[]> = {
+      para_athletics: [],
+      para_powerlifting: [],
+      shooting_para_sport: [],
+      para_cycling: [],
+      para_badminton: [],
+      boccia: [],
+      para_fencing: [],
+      para_triathlon: [],
+      para_climbing: [],
+      para_taekwondo: [],
+      para_equestrian: [],
+    };
+    players.forEach((p) => map[p.sport].push(p));
+    return map;
+  }, [players]);
+
+type PillProps = { children: React.ReactNode; tone?: "brand" | "new" | "neutral" };
+function Pill({ children, tone = "brand" }: PillProps) {
+  const cls =
+    tone === "new"
+      ? brand.chipAlt
+      : tone === "brand"
+      ? brand.chip
+      : "bg-slate-100 text-slate-700 border-slate-200";
+  return <span className={`px-2 py-1 rounded-full text-xs border ${cls}`}>{children}</span>;
+}
+
+function Card({
+  children,
+  title,
+}: {
+  children: React.ReactNode;
+  title?: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 shadow-sm bg-white p-4">
+      {title && <h4 className="text-sm font-semibold text-slate-700 mb-2">{title}</h4>}
+      {children}
+    </div>
+  );
+}
+
+function KeyVal({ k, v }: { k: string; v?: string }) {
+  if (!v) return null;
+  return (
+    <div className="flex items-baseline gap-2 text-sm">
+      <span className="w-48 text-slate-500">{k}</span>
+      <span className="font-medium">{v}</span>
+    </div>
+  );
+}
+
+function MiniTable<T>({
+  cols,
+  rows,
+  dense,
+}: {
+  cols: { key: keyof T; label: string }[];
+  rows: T[];
+  dense?: boolean;
+}) {
+  return (
+    <div className="overflow-x-auto">
+      <table className={`min-w-full text-sm ${dense ? "text-[12px]" : ""}`}>
+        <thead>
+          <tr className="bg-blue-50 text-blue-900">
+            {cols.map((c) => (
+              <th key={String(c.key)} className="px-3 py-2 text-left font-semibold">
+                {c.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i} className="odd:bg-white even:bg-slate-50">
+              {cols.map((c) => (
+                <td key={String(c.key)} className="px-3 py-2 whitespace-nowrap">
+                  {(r as any)[c.key] ?? "—"}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ---------- Featured Athlete banner (always visible)
+function FeaturedAthlete({ p }: { p: Player }) {
+  return (
+    <section className="mt-4 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className={`h-12 ${brand.grad}`} />
+      <div className="p-4 sm:p-6">
+        <div className="grid md:grid-cols-3 gap-6 items-center">
+          {/* Identity */}
+          <div className="flex items-center gap-4">
+            {p.photo ? (
+              <img
+                src={p.photo}
+                alt={p.name}
+                className="h-20 w-20 rounded-2xl object-cover border border-slate-200 shadow"
+              />
+            ) : (
+              <div className="h-20 w-20 rounded-2xl bg-blue-50 grid place-items-center text-blue-700 text-2xl font-bold">
+                {p.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
+              </div>
+            )}
+            <div>
+              <div className="text-xs uppercase tracking-wide text-slate-500">Featured Athlete</div>
+              <h2 className={`text-xl font-semibold ${brand.blueText}`}>{p.name}</h2>
+              <div className="text-sm text-slate-600">
+                Wheelchair Racing — <span className="font-medium">100m</span> •{" "}
+                <span className="font-medium">800m</span> ({p.classification})
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Pill>Best 100m: 14.84</Pill>
+                <Pill>Best 800m: 1:40.46</Pill>
+                <Pill tone="new">Road to LA 2028</Pill>
+              </div>
+            </div>
+          </div>
+
+          {/* Highlights */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-700">2025 Highlights</h3>
+            <ul className="mt-2 text-sm text-slate-700 list-disc pl-5 space-y-1">
+              <li>Swiss National Open — 100m <span className="font-medium">14.94</span> (2nd)</li>
+              <li>Grand Prix Switzerland — 100m <span className="font-medium">14.84</span> (3rd)</li>
+              <li>Sharjah Intl. — 800m <span className="font-medium">1:40.46</span> (2nd)</li>
+            </ul>
+          </div>
+
+          {/* Road note */}
+          <div className="md:pl-6">
+            <h3 className="text-sm font-semibold text-slate-700">Road to LA 2028</h3>
+            <p className="mt-2 text-sm text-slate-700">
+              Macrocycle with quarterly evaluations, focused camps, and medal target at Los Angeles 2028.
+            </p>
+            <div className="mt-3">
+              <button
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${brand.accentBtn}`}
+                onClick={() => {
+                  // hint to open the profile: we’ll click the first "View Profile" button
+                  document.querySelector<HTMLButtonElement>('[data-open-profile="ath-001"]')?.click();
+                }}
+              >
+                View full profile
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ---------- Player Drawer
+function PlayerDrawer({ player, onClose }: { player: Player | null; onClose: () => void }) {
+  if (!player) return null;
+  return (
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <div className="absolute right-0 top-0 h-full w-full max-w-4xl bg-white shadow-2xl p-6 overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            {player.photo ? (
+              <img
+                src={player.photo}
+                alt={`${player.name} photo`}
+                className="h-16 w-16 rounded-xl object-cover border border-slate-200"
+              />
+            ) : (
+              <div className="h-16 w-16 rounded-xl bg-slate-100 grid place-items-center text-slate-500 text-xl">
+                {player.name
+                  .split(" ")
+                  .map((w) => w[0])
+                  .slice(0, 2)
+                  .join("")}
+              </div>
+            )}
+            <div>
+              <h3 className="text-xl font-bold">{player.name}</h3>
+              <div className="mt-1 flex items-center gap-2">
+                <Pill>Para Athletics</Pill>
+                {player.classification && <Pill>{player.classification}</Pill>}
+                <Pill tone="new">Target: LA 2028</Pill>
+              </div>
+            </div>
+          </div>
+          <button className="px-3 py-1.5 rounded-lg border text-sm" onClick={onClose}>
+            Close
+          </button>
+        </div>
+
+        {/* Bio grid */}
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Card title="Bio & Classification">
+            <KeyVal k="Date of Birth" v={player.dob} />
+            <KeyVal k="Disability" v={player.disability} />
+            <KeyVal k="Class" v={player.classification} />
+            <KeyVal k="Education" v={player.education} />
+            <KeyVal k="Marital Status" v={player.maritalStatus} />
+            <KeyVal k="Club" v={player.club} />
+            <KeyVal k="Events" v={player.events?.join(", ")} />
+            <KeyVal k="Coach" v={player.coach} />
+          </Card>
+
+          <Card title="Training & Support">
+            <KeyVal k="Training Years" v={player.trainingYears} />
+            <KeyVal k="Training Rate" v={player.trainingRate} />
+            <KeyVal k="Support" v={player.supportLevel} />
+            <KeyVal k="Preparation Period" v={player.training?.period} />
+            <KeyVal k="Annual Plan" v={player.training?.annualPlan} />
+          </Card>
+
+          <Card title="Programs">
+            <KeyVal k="Medical" v={player.medical?.cadence} />
+            <KeyVal k="Psychology" v={player.psychological?.program} />
+            <KeyVal k="Nutrition" v={player.nutrition?.plan} />
+            {player.nutrition?.supplements?.length ? (
+              <KeyVal k="Supplements" v={player.nutrition.supplements.join(", ")} />
+            ) : null}
+            <KeyVal k="Assessments" v={player.assessments?.schedule} />
+          </Card>
+        </div>
+
+        {/* Goals */}
+        <div className="mt-4">
+          <Card title="Athlete Goals">
+            <ul className="list-disc pl-5 text-sm">
+              {player.goals?.map((g, i) => (
+                <li key={i}>{g}</li>
+              ))}
+            </ul>
+          </Card>
+        </div>
+
+        {/* Performance Boards */}
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card title="100m T34 — Targets & Results (2025)">
+            <MiniTable<CompetitionRow>
+              dense
+              cols={[
+                { key: "name", label: "Competition" },
+                { key: "dates", label: "Dates" },
+                { key: "target", label: "Target" },
+                { key: "achieved", label: "Achieved" },
+                { key: "rank", label: "Rank" },
+              ]}
+              rows={player.comps100m || []}
+            />
+          </Card>
+          <Card title="800m T34 — Targets & Results (2025)">
+            <MiniTable<CompetitionRow>
+              dense
+              cols={[
+                { key: "name", label: "Competition" },
+                { key: "dates", label: "Dates" },
+                { key: "target", label: "Target" },
+                { key: "achieved", label: "Achieved" },
+                { key: "rank", label: "Rank" },
+              ]}
+              rows={player.comps800m || []}
+            />
+          </Card>
+        </div>
+
+        {/* Records snapshot */}
+        <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {(player.records || []).map((r, i) => (
+            <Card key={i} title={`${r.event} — Records & Best`}>
+              <div className="flex flex-col gap-2 text-sm">
+                <KeyVal k="World Record" v={r.worldRecord} />
+                {r.regionalRecord && <KeyVal k="Regional Record" v={r.regionalRecord} />}
+                {r.best?.time && (
+                  <>
+                    <KeyVal k="Best Time" v={r.best.time} />
+                    <KeyVal k="Date/Place" v={r.best.datePlace} />
+                    {r.best.rank && <KeyVal k="Best Rank" v={r.best.rank} />}
+                  </>
+                )}
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Camps timeline */}
+        <div className="mt-6">
+          <Card title="Camps & Competitions Plan">
+            <MiniTable<CampRow>
+              cols={[
+                { key: "dates", label: "Dates" },
+                { key: "days", label: "Days" },
+                { key: "place", label: "Place" },
+                { key: "label", label: "Camp / Competition" },
+                { key: "remarks", label: "Remarks" },
+              ]}
+              rows={player.camps || []}
+            />
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function labelForSport(key: SportKey) {
+  return SPORTS.find((s) => s.key === key)?.label ?? key;
+}
+
+// ---------- Main App
+export default function App() {
+  const rosterBySport = useRosterBySport(PLAYERS);
+  const [active, setActive] = useState<SportKey>("para_athletics");
+  const [query, setQuery] = useState("");
+  const [focus, setFocus] = useState<Player | null>(PLAYERS[0]); // open Mohammad by default
+
+  const filtered = (rosterBySport[active] || []).filter((p) =>
+    [p.name, p.events?.join(" ")].join(" ").toLowerCase().includes(query.toLowerCase())
+  );
+
+  const longListCount = 19;
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <header className="sticky top-0 z-40 backdrop-blur bg-white/70 border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* Club logo */}
+            <img src="/logo.png" alt="Club Logo" className="h-10 w-auto object-contain" />
+            <div>
+              <h1 className={`text-lg font-bold ${brand.blueText}`}>Paralympic Champion Project</h1>
+              <p className="text-xs text-slate-500">
+                Los Angeles 2028 — Dubai Club for People of Determination
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-slate-500">Prep Period</div>
+            <div className="text-sm font-medium">Nov 2024 – Jul 2028</div>
+          </div>
+        </div>
+        <div className={`h-1 ${brand.grad}`} />
+      </header>
+
+      {/* Featured banner (always visible) */}
+      <div className="max-w-7xl mx-auto px-4">
+        <FeaturedAthlete p={PLAYERS[0]} />
+      </div>
+
+      {/* Sport Tabs */}
+      <div className="max-w-7xl mx-auto px-4 mt-4">
+        <div className="flex flex-wrap gap-2">
+          {SPORTS.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => setActive(s.key)}
+              className={`px-3 py-1.5 rounded-full text-sm border transition ${
+                active === s.key
+                  ? `bg-blue-700 text-white border-blue-700 shadow`
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+              }`}
+              title={s.status === "new_targeted" ? "New targeted sport" : "Targeted sport"}
+            >
+              {s.label}
+              {s.status === "new_targeted" && (
+                <span className="ml-2">
+                  <Pill tone="new">NEW</Pill>
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Toolbar */}
+        <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Pill>Long List: {longListCount} athletes</Pill>
+            <Pill>Short List: (by Oct 2027)</Pill>
+            <Pill>LA 2028 Participants: (by Mar 2028)</Pill>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search athlete by name or event…"
+              className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm min-w-[260px]"
+            />
+            <button
+              className="px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white hover:bg-slate-50"
+              onClick={() => setQuery("")}
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+
+        {/* Roster grid */}
+        <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.length === 0 && (
+            <Card>
+              <div className="text-center py-10 text-slate-500">
+                No athletes yet in {labelForSport(active)}. Add them in the data section.
+              </div>
+            </Card>
+          )}
+
+          {filtered.map((p) => (
+            <Card key={p.id}>
+              <div className="flex items-start gap-4">
+                {p.photo ? (
+                  <img
+                    src={p.photo}
+                    alt={`${p.name} photo`}
+                    className="h-16 w-16 rounded-xl object-cover border border-slate-200"
+                  />
+                ) : (
+                  <div className="h-16 w-16 rounded-xl bg-slate-100 grid place-items-center text-slate-500 text-xl">
+                    {p.name
+                      .split(" ")
+                      .map((w) => w[0])
+                      .slice(0, 2)
+                      .join("")}
+                  </div>
+                )}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">{p.name}</h3>
+                    {p.classification && <Pill>{p.classification}</Pill>}
+                  </div>
+                  <div className="text-sm text-slate-600 mt-1">
+                    {p.events?.join(", ") || "—"}
+                  </div>
+                  <div className="mt-3 flex items-center gap-2">
+                    <button
+                      data-open-profile={p.id}
+                      className={`px-3 py-1.5 rounded-lg text-sm ${brand.accentBtn}`}
+                      onClick={() => setFocus(p)}
+                    >
+                      View Profile
+                    </button>
+                    <button className="px-3 py-1.5 rounded-lg text-sm border border-slate-200 bg-white">
+                      Add to Short List
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Program Snapshot */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card title="Medical Monitoring">
+            <ul className="list-disc pl-5 text-sm">
+              <li>Complete medical checkups every 6 months</li>
+              <li>Injury screenings as needed</li>
+            </ul>
+          </Card>
+          <Card title="Technical Evaluation">
+            <ul className="list-disc pl-5 text-sm">
+              <li>Pre & post physical + anthropometric tests every 3 months</li>
+              <li>Assess strengths/weaknesses, determine dietary needs</li>
+            </ul>
+          </Card>
+          <Card title="Monitoring & Evaluation">
+            <ul className="list-disc pl-5 text-sm">
+              <li>Quarterly evaluation before camps</li>
+              <li>Performance DB: biometrics, physiological, biomechanical, motor</li>
+              <li>Specialized software to support elite performance</li>
+            </ul>
+          </Card>
+        </div>
+
+        {/* Footer */}
+        <footer className="py-10 text-center text-xs text-slate-500">
+          © {new Date().getFullYear()} Paralympic Champion — LA 2028 Preparation
+        </footer>
+      </div>
+
+      {/* Drawer */}
+      <PlayerDrawer player={focus} onClose={() => setFocus(null)} />
+    </div>
+  );
+}
