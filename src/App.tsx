@@ -1,24 +1,23 @@
 import React, { useMemo, useState } from "react";
 
 /**
- * Paralympic Champion — LA 2028
- * Clean TypeScript build (Vite + Tailwind)
- * - Logo-matched UI (blue gradient + gold accent)
- * - Featured banner on every tab
- * - Main page opens first; drawer opens on button click
- * - Full-width tables in the drawer (one per card)
+ * Paralympic Champion — LA 2028 (Vite + Tailwind)
+ * - Logo-themed UI (blue gradient + gold accent)
+ * - Featured banner always visible
+ * - Main page opens first; drawer opens on click
+ * - Full-width cards: Bio, Training, Goals (each one individual)
+ * - Full-width performance tables (100m / 800m)
  */
 
-// ---------- Brand helpers (Tailwind default blues + amber)
+/* ---------- Brand helpers (Tailwind blues + amber) ---------- */
 const brand = {
   grad: "bg-gradient-to-r from-blue-700 to-blue-400",
   blueText: "text-blue-800",
   chip: "bg-blue-50 text-blue-800 border-blue-200",
-  goldHex: "#fbbf24",
   accentBtn: "bg-blue-700 hover:bg-blue-800 text-white",
 };
 
-// ---------- Types
+/* ---------- Types ---------- */
 export type SportKey =
   | "para_athletics"
   | "para_powerlifting"
@@ -94,7 +93,7 @@ type Player = {
   assessments?: { schedule?: string; physiological?: string[]; anthropometric?: string[] };
 };
 
-// ---------- Sports & data
+/* ---------- Sports & data ---------- */
 const SPORTS: { key: SportKey; label: string; status: "targeted" | "new_targeted" }[] = [
   { key: "para_powerlifting", label: "Para Powerlifting", status: "targeted" },
   { key: "para_athletics", label: "Para Athletics", status: "targeted" },
@@ -176,7 +175,7 @@ const PLAYERS: Player[] = [
   },
 ];
 
-// ---------- Helpers
+/* ---------- Helpers ---------- */
 const useRosterBySport = (players: Player[]) =>
   useMemo(() => {
     const map: Record<SportKey, Player[]> = {
@@ -258,14 +257,21 @@ function MiniTable<T extends Record<string, unknown>>({
   );
 }
 
-// ---------- Featured Athlete banner
-const FeaturedAthlete: React.FC<{ p: Player; onOpenProfile: () => void }> = ({ p, onOpenProfile }) => (
+/* ---------- Featured banner ---------- */
+const FeaturedAthlete: React.FC<{ p: Player; onOpenProfile: () => void }> = ({
+  p,
+  onOpenProfile,
+}) => (
   <section className="mt-4 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
     <div className={`h-10 ${brand.grad}`} />
     <div className="p-6 grid md:grid-cols-3 gap-6 items-center">
       <div className="flex items-center gap-4 md:col-span-1">
         {p.photo ? (
-          <img src={p.photo} alt={p.name} className="w-24 h-24 rounded-2xl object-cover border-4 border-blue-100" />
+          <img
+            src={p.photo}
+            alt={p.name}
+            className="w-24 h-24 rounded-2xl object-cover border-4 border-blue-100"
+          />
         ) : (
           <div className="w-24 h-24 rounded-2xl bg-blue-50 grid place-items-center text-blue-700 text-2xl font-bold">
             {p.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
@@ -293,7 +299,10 @@ const FeaturedAthlete: React.FC<{ p: Player; onOpenProfile: () => void }> = ({ p
       <div>
         <h3 className="text-sm font-semibold text-blue-800 mb-2">Road to LA 2028</h3>
         <p className="text-sm text-slate-700">{p.training?.annualPlan}</p>
-        <button className={`mt-3 inline-flex items-center px-3 py-1.5 rounded-lg text-sm ${brand.accentBtn}`} onClick={onOpenProfile}>
+        <button
+          className={`mt-3 inline-flex items-center px-3 py-1.5 rounded-lg text-sm ${brand.accentBtn}`}
+          onClick={onOpenProfile}
+        >
           View full profile
         </button>
       </div>
@@ -301,8 +310,11 @@ const FeaturedAthlete: React.FC<{ p: Player; onOpenProfile: () => void }> = ({ p
   </section>
 );
 
-// ---------- Player Drawer (full-width tables)
-const PlayerDrawer: React.FC<{ player: Player | null; onClose: () => void }> = ({ player, onClose }) => {
+/* ---------- Player Drawer (Bio, Training, Goals are each individual full-width cards) ---------- */
+const PlayerDrawer: React.FC<{ player: Player | null; onClose: () => void }> = ({
+  player,
+  onClose,
+}) => {
   if (!player) return null;
   return (
     <div className="fixed inset-0 z-50">
@@ -312,7 +324,11 @@ const PlayerDrawer: React.FC<{ player: Player | null; onClose: () => void }> = (
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">
             {player.photo ? (
-              <img src={player.photo} alt={`${player.name} photo`} className="h-16 w-16 rounded-xl object-cover border border-slate-200" />
+              <img
+                src={player.photo}
+                alt={`${player.name} photo`}
+                className="h-16 w-16 rounded-xl object-cover border border-slate-200"
+              />
             ) : (
               <div className="h-16 w-16 rounded-xl bg-slate-100 grid place-items-center text-slate-500 text-xl">
                 {player.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
@@ -327,11 +343,13 @@ const PlayerDrawer: React.FC<{ player: Player | null; onClose: () => void }> = (
               </div>
             </div>
           </div>
-          <button className="px-3 py-1.5 rounded-lg border text-sm" onClick={onClose}>Close</button>
+          <button className="px-3 py-1.5 rounded-lg border text-sm" onClick={onClose}>
+            Close
+          </button>
         </div>
 
-        {/* Bio grid */}
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* INDIVIDUAL FULL-WIDTH CARDS */}
+        <div className="mt-6 space-y-4">
           <Card title="Bio & Classification">
             <KeyVal k="Date of Birth" v={player.dob} />
             <KeyVal k="Disability" v={player.disability} />
@@ -391,7 +409,7 @@ const PlayerDrawer: React.FC<{ player: Player | null; onClose: () => void }> = (
           </Card>
         </div>
 
-        {/* Camps */}
+        {/* Camps plan */}
         <div className="mt-6">
           <Card title="Camps & Competitions Plan">
             <MiniTable<CampRow>
@@ -415,12 +433,12 @@ function labelForSport(key: SportKey) {
   return SPORTS.find((s) => s.key === key)?.label ?? key;
 }
 
-// ---------- Main App
-const App: React.FC = () => {
+/* ---------- Main App ---------- */
+export default function App() {
   const rosterBySport = useRosterBySport(PLAYERS);
   const [active, setActive] = useState<SportKey>("para_athletics");
   const [query, setQuery] = useState("");
-  // Open MAIN page first (drawer closed)
+  // MAIN page first (drawer closed)
   const [focus, setFocus] = useState<Player | null>(null);
 
   const filtered = (rosterBySport[active] || []).filter((p) =>
@@ -438,7 +456,9 @@ const App: React.FC = () => {
             <img src="/logo.png" alt="Club Logo" className="h-10 w-auto object-contain" />
             <div>
               <h1 className={`text-lg font-bold ${brand.blueText}`}>Paralympic Champion Project</h1>
-              <p className="text-xs text-slate-500">Los Angeles 2028 — Dubai Club for People of Determination</p>
+              <p className="text-xs text-slate-500">
+                Los Angeles 2028 — Dubai Club for People of Determination
+              </p>
             </div>
           </div>
           <div className="text-right">
@@ -449,12 +469,12 @@ const App: React.FC = () => {
         <div className={`h-1 ${brand.grad}`} />
       </header>
 
-      {/* Featured banner always visible */}
+      {/* Featured banner */}
       <div className="max-w-7xl mx-auto px-4">
         <FeaturedAthlete p={PLAYERS[0]} onOpenProfile={() => setFocus(PLAYERS[0])} />
       </div>
 
-      {/* Tabs + toolbar */}
+      {/* Tabs */}
       <div className="max-w-7xl mx-auto px-4 mt-4">
         <div className="flex flex-wrap gap-2">
           {SPORTS.map((s) => (
@@ -470,12 +490,15 @@ const App: React.FC = () => {
             >
               {s.label}
               {s.status === "new_targeted" && (
-                <span className="ml-2"><Pill tone="new">NEW</Pill></span>
+                <span className="ml-2">
+                  <Pill tone="new">NEW</Pill>
+                </span>
               )}
             </button>
           ))}
         </div>
 
+        {/* Toolbar */}
         <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm">
             <Pill>Long List: {longListCount} athletes</Pill>
@@ -489,15 +512,22 @@ const App: React.FC = () => {
               placeholder="Search athlete by name or event…"
               className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm min-w-[260px]"
             />
-            <button className="px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white hover:bg-slate-50" onClick={() => setQuery("")}>Clear</button>
+            <button
+              className="px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white hover:bg-slate-50"
+              onClick={() => setQuery("")}
+            >
+              Clear
+            </button>
           </div>
         </div>
 
-        {/* Roster grid */}
+        {/* Roster */}
         <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.length === 0 && (
             <Card>
-              <div className="text-center py-10 text-slate-500">No athletes yet in {labelForSport(active)}. Add them in the data section.</div>
+              <div className="text-center py-10 text-slate-500">
+                No athletes yet in {labelForSport(active)}. Add them in the data section.
+              </div>
             </Card>
           )}
 
@@ -505,10 +535,18 @@ const App: React.FC = () => {
             <Card key={p.id}>
               <div className="flex items-start gap-4">
                 {p.photo ? (
-                  <img src={p.photo} alt={`${p.name} photo`} className="h-16 w-16 rounded-xl object-cover border border-slate-200" />
+                  <img
+                    src={p.photo}
+                    alt={`${p.name} photo`}
+                    className="h-16 w-16 rounded-xl object-cover border border-slate-200"
+                  />
                 ) : (
                   <div className="h-16 w-16 rounded-xl bg-slate-100 grid place-items-center text-slate-500 text-xl">
-                    {p.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
+                    {p.name
+                      .split(" ")
+                      .map((w) => w[0])
+                      .slice(0, 2)
+                      .join("")}
                   </div>
                 )}
                 <div className="flex-1">
@@ -518,10 +556,15 @@ const App: React.FC = () => {
                   </div>
                   <div className="text-sm text-slate-600 mt-1">{p.events?.join(", ") || "—"}</div>
                   <div className="mt-3 flex items-center gap-2">
-                    <button className={`px-3 py-1.5 rounded-lg text-sm ${brand.accentBtn}`} onClick={() => setFocus(p)}>
+                    <button
+                      className={`px-3 py-1.5 rounded-lg text-sm ${brand.accentBtn}`}
+                      onClick={() => setFocus(p)}
+                    >
                       View Profile
                     </button>
-                    <button className="px-3 py-1.5 rounded-lg text-sm border border-slate-200 bg-white">Add to Short List</button>
+                    <button className="px-3 py-1.5 rounded-lg text-sm border border-slate-200 bg-white">
+                      Add to Short List
+                    </button>
                   </div>
                 </div>
               </div>
@@ -553,13 +596,13 @@ const App: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <footer className="py-10 text-center text-xs text-slate-500">© {new Date().getFullYear()} Paralympic Champion — LA 2028 Preparation</footer>
+        <footer className="py-10 text-center text-xs text-slate-500">
+          © {new Date().getFullYear()} Paralympic Champion — LA 2028 Preparation
+        </footer>
       </div>
 
       {/* Drawer */}
       <PlayerDrawer player={focus} onClose={() => setFocus(null)} />
     </div>
   );
-};
-
-export default App;
+}
