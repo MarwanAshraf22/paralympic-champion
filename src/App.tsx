@@ -1,21 +1,21 @@
-// src/App.tsx
 import React, { useMemo, useState } from "react";
 
-/* ------------------------------------------------------------
-   Paralympic Champion — LA 2028
-   - Logo-matched UI (blue gradient + gold accent, soft cards)
-   - Featured Athlete banner visible on all tabs
-   - Detailed athlete profile drawer with targets/results/camps
-   - Pure React + Tailwind (no extra deps)
--------------------------------------------------------------*/
+/**
+ * Paralympic Champion — LA 2028
+ * Clean TypeScript build (Vite + Tailwind)
+ * - Logo-matched UI (blue gradient + gold accent)
+ * - Featured banner on every tab
+ * - Main page opens first; drawer opens on button click
+ * - Full-width tables in the drawer (one per card)
+ */
 
-// ---------- Brand helpers (using standard Tailwind blues/amber)
+// ---------- Brand helpers (Tailwind default blues + amber)
 const brand = {
   grad: "bg-gradient-to-r from-blue-700 to-blue-400",
-  blueText: "text-blue-700",
-  chip: "bg-blue-50 text-blue-700 border-blue-200",
-  chipAlt: "bg-amber-50 text-amber-800 border-amber-200",
-  accentBtn: "bg-[#7b0a16] text-white hover:opacity-90", // maroon accent you liked
+  blueText: "text-blue-800",
+  chip: "bg-blue-50 text-blue-800 border-blue-200",
+  goldHex: "#fbbf24",
+  accentBtn: "bg-blue-700 hover:bg-blue-800 text-white",
 };
 
 // ---------- Types
@@ -79,6 +79,8 @@ type Player = {
   supportLevel?: string;
   notes?: string;
 
+  highlights?: string[];
+
   comps100m?: CompetitionRow[];
   comps800m?: CompetitionRow[];
   records?: RecordsSnapshot[];
@@ -92,7 +94,7 @@ type Player = {
   assessments?: { schedule?: string; physiological?: string[]; anthropometric?: string[] };
 };
 
-// ---------- Sports & seed data
+// ---------- Sports & data
 const SPORTS: { key: SportKey; label: string; status: "targeted" | "new_targeted" }[] = [
   { key: "para_powerlifting", label: "Para Powerlifting", status: "targeted" },
   { key: "para_athletics", label: "Para Athletics", status: "targeted" },
@@ -107,7 +109,6 @@ const SPORTS: { key: SportKey; label: string; status: "targeted" | "new_targeted
   { key: "para_equestrian", label: "Para Equestrian", status: "new_targeted" },
 ];
 
-// Full data for Mohammad Youssef
 const PLAYERS: Player[] = [
   {
     id: "ath-001",
@@ -126,8 +127,11 @@ const PLAYERS: Player[] = [
     trainingYears: "10 Years",
     trainingRate: "5 days/week, ~2 hours per session",
     supportLevel: "Great support from family and friends",
-    notes:
-      "Candidate within the Paralympic Champion Project long-list. Short-list and LA 2028 participants to be finalized by 2027–2028.",
+    highlights: [
+      "Swiss National Open — 100m 14.94 (2nd)",
+      "Grand Prix Switzerland — 100m 14.84 (3rd)",
+      "Sharjah Intl. — 800m 1:40.46 (2nd)",
+    ],
     medical: { cadence: "Full checkup every 6 months; screenings as needed" },
     psychological: { program: "Customized sessions with sports psychologist" },
     nutrition: { plan: "Nutritionist-led plan after medical tests", supplements: ["Vitamins", "Minerals"] },
@@ -192,33 +196,22 @@ const useRosterBySport = (players: Player[]) =>
     return map;
   }, [players]);
 
-type PillProps = { children: React.ReactNode; tone?: "brand" | "new" | "neutral" };
-function Pill({ children, tone = "brand" }: PillProps) {
-  const cls =
-    tone === "new"
-      ? brand.chipAlt
-      : tone === "brand"
-      ? brand.chip
-      : "bg-slate-100 text-slate-700 border-slate-200";
-  return <span className={`px-2 py-1 rounded-full text-xs border ${cls}`}>{children}</span>;
-}
-
-function Card({
+const Pill: React.FC<{ children: React.ReactNode; tone?: "brand" | "new" | "neutral" }> = ({
   children,
-  title,
-}: {
-  children: React.ReactNode;
-  title?: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-slate-200 shadow-sm bg-white p-4">
-      {title && <h4 className="text-sm font-semibold text-slate-700 mb-2">{title}</h4>}
-      {children}
-    </div>
-  );
-}
+  tone = "brand",
+}) => {
+  const cls = tone === "new" ? "bg-amber-50 text-amber-800 border-amber-200" : brand.chip;
+  return <span className={`px-2 py-1 rounded-full text-xs border ${cls}`}>{children}</span>;
+};
 
-function KeyVal({ k, v }: { k: string; v?: string }) {
+const Card: React.FC<{ children: React.ReactNode; title?: string }> = ({ children, title }) => (
+  <div className="rounded-2xl border border-slate-200 shadow-sm bg-white p-4">
+    {title && <h4 className="text-sm font-semibold text-slate-700 mb-2">{title}</h4>}
+    {children}
+  </div>
+);
+
+const KeyVal: React.FC<{ k: string; v?: string }> = ({ k, v }) => {
   if (!v) return null;
   return (
     <div className="flex items-baseline gap-2 text-sm">
@@ -226,9 +219,9 @@ function KeyVal({ k, v }: { k: string; v?: string }) {
       <span className="font-medium">{v}</span>
     </div>
   );
-}
+};
 
-function MiniTable<T>({
+function MiniTable<T extends Record<string, unknown>>({
   cols,
   rows,
   dense,
@@ -265,77 +258,51 @@ function MiniTable<T>({
   );
 }
 
-// ---------- Featured Athlete banner (always visible)
-function FeaturedAthlete({ p }: { p: Player }) {
-  return (
-    <section className="mt-4 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-      <div className={`h-12 ${brand.grad}`} />
-      <div className="p-4 sm:p-6">
-        <div className="grid md:grid-cols-3 gap-6 items-center">
-          {/* Identity */}
-          <div className="flex items-center gap-4">
-            {p.photo ? (
-              <img
-                src={p.photo}
-                alt={p.name}
-                className="h-20 w-20 rounded-2xl object-cover border border-slate-200 shadow"
-              />
-            ) : (
-              <div className="h-20 w-20 rounded-2xl bg-blue-50 grid place-items-center text-blue-700 text-2xl font-bold">
-                {p.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
-              </div>
-            )}
-            <div>
-              <div className="text-xs uppercase tracking-wide text-slate-500">Featured Athlete</div>
-              <h2 className={`text-xl font-semibold ${brand.blueText}`}>{p.name}</h2>
-              <div className="text-sm text-slate-600">
-                Wheelchair Racing — <span className="font-medium">100m</span> •{" "}
-                <span className="font-medium">800m</span> ({p.classification})
-              </div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Pill>Best 100m: 14.84</Pill>
-                <Pill>Best 800m: 1:40.46</Pill>
-                <Pill tone="new">Road to LA 2028</Pill>
-              </div>
-            </div>
+// ---------- Featured Athlete banner
+const FeaturedAthlete: React.FC<{ p: Player; onOpenProfile: () => void }> = ({ p, onOpenProfile }) => (
+  <section className="mt-4 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+    <div className={`h-10 ${brand.grad}`} />
+    <div className="p-6 grid md:grid-cols-3 gap-6 items-center">
+      <div className="flex items-center gap-4 md:col-span-1">
+        {p.photo ? (
+          <img src={p.photo} alt={p.name} className="w-24 h-24 rounded-2xl object-cover border-4 border-blue-100" />
+        ) : (
+          <div className="w-24 h-24 rounded-2xl bg-blue-50 grid place-items-center text-blue-700 text-2xl font-bold">
+            {p.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
           </div>
-
-          {/* Highlights */}
-          <div>
-            <h3 className="text-sm font-semibold text-slate-700">2025 Highlights</h3>
-            <ul className="mt-2 text-sm text-slate-700 list-disc pl-5 space-y-1">
-              <li>Swiss National Open — 100m <span className="font-medium">14.94</span> (2nd)</li>
-              <li>Grand Prix Switzerland — 100m <span className="font-medium">14.84</span> (3rd)</li>
-              <li>Sharjah Intl. — 800m <span className="font-medium">1:40.46</span> (2nd)</li>
-            </ul>
-          </div>
-
-          {/* Road note */}
-          <div className="md:pl-6">
-            <h3 className="text-sm font-semibold text-slate-700">Road to LA 2028</h3>
-            <p className="mt-2 text-sm text-slate-700">
-              Macrocycle with quarterly evaluations, focused camps, and medal target at Los Angeles 2028.
-            </p>
-            <div className="mt-3">
-              <button
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${brand.accentBtn}`}
-                onClick={() => {
-                  // hint to open the profile: we’ll click the first "View Profile" button
-                  document.querySelector<HTMLButtonElement>('[data-open-profile="ath-001"]')?.click();
-                }}
-              >
-                View full profile
-              </button>
-            </div>
+        )}
+        <div>
+          <div className="text-xs uppercase tracking-wide text-slate-500">Featured Athlete</div>
+          <h2 className={`text-xl font-bold ${brand.blueText}`}>{p.name}</h2>
+          <p className="text-blue-800">Wheelchair Racing — 100m & 800m ({p.classification})</p>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <Pill>Best 100m: 14.84</Pill>
+            <Pill>Best 800m: 1:40.46</Pill>
+            <Pill tone="new">Road to LA 2028</Pill>
           </div>
         </div>
       </div>
-    </section>
-  );
-}
+      <div>
+        <h3 className="text-sm font-semibold text-blue-800 mb-2">2025 Highlights</h3>
+        <ul className="list-disc pl-5 text-sm text-slate-700 space-y-1">
+          {(p.highlights || []).map((h, i) => (
+            <li key={i}>{h}</li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <h3 className="text-sm font-semibold text-blue-800 mb-2">Road to LA 2028</h3>
+        <p className="text-sm text-slate-700">{p.training?.annualPlan}</p>
+        <button className={`mt-3 inline-flex items-center px-3 py-1.5 rounded-lg text-sm ${brand.accentBtn}`} onClick={onOpenProfile}>
+          View full profile
+        </button>
+      </div>
+    </div>
+  </section>
+);
 
-// ---------- Player Drawer
-function PlayerDrawer({ player, onClose }: { player: Player | null; onClose: () => void }) {
+// ---------- Player Drawer (full-width tables)
+const PlayerDrawer: React.FC<{ player: Player | null; onClose: () => void }> = ({ player, onClose }) => {
   if (!player) return null;
   return (
     <div className="fixed inset-0 z-50">
@@ -345,18 +312,10 @@ function PlayerDrawer({ player, onClose }: { player: Player | null; onClose: () 
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">
             {player.photo ? (
-              <img
-                src={player.photo}
-                alt={`${player.name} photo`}
-                className="h-16 w-16 rounded-xl object-cover border border-slate-200"
-              />
+              <img src={player.photo} alt={`${player.name} photo`} className="h-16 w-16 rounded-xl object-cover border border-slate-200" />
             ) : (
               <div className="h-16 w-16 rounded-xl bg-slate-100 grid place-items-center text-slate-500 text-xl">
-                {player.name
-                  .split(" ")
-                  .map((w) => w[0])
-                  .slice(0, 2)
-                  .join("")}
+                {player.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
               </div>
             )}
             <div>
@@ -368,9 +327,7 @@ function PlayerDrawer({ player, onClose }: { player: Player | null; onClose: () 
               </div>
             </div>
           </div>
-          <button className="px-3 py-1.5 rounded-lg border text-sm" onClick={onClose}>
-            Close
-          </button>
+          <button className="px-3 py-1.5 rounded-lg border text-sm" onClick={onClose}>Close</button>
         </div>
 
         {/* Bio grid */}
@@ -394,30 +351,17 @@ function PlayerDrawer({ player, onClose }: { player: Player | null; onClose: () 
             <KeyVal k="Annual Plan" v={player.training?.annualPlan} />
           </Card>
 
-          <Card title="Programs">
-            <KeyVal k="Medical" v={player.medical?.cadence} />
-            <KeyVal k="Psychology" v={player.psychological?.program} />
-            <KeyVal k="Nutrition" v={player.nutrition?.plan} />
-            {player.nutrition?.supplements?.length ? (
-              <KeyVal k="Supplements" v={player.nutrition.supplements.join(", ")} />
-            ) : null}
-            <KeyVal k="Assessments" v={player.assessments?.schedule} />
-          </Card>
-        </div>
-
-        {/* Goals */}
-        <div className="mt-4">
           <Card title="Athlete Goals">
             <ul className="list-disc pl-5 text-sm">
-              {player.goals?.map((g, i) => (
+              {(player.goals || []).map((g, i) => (
                 <li key={i}>{g}</li>
               ))}
             </ul>
           </Card>
         </div>
 
-        {/* Performance Boards */}
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Performance tables: full width, one per card */}
+        <div className="mt-6 space-y-4">
           <Card title="100m T34 — Targets & Results (2025)">
             <MiniTable<CompetitionRow>
               dense
@@ -431,6 +375,7 @@ function PlayerDrawer({ player, onClose }: { player: Player | null; onClose: () 
               rows={player.comps100m || []}
             />
           </Card>
+
           <Card title="800m T34 — Targets & Results (2025)">
             <MiniTable<CompetitionRow>
               dense
@@ -446,26 +391,7 @@ function PlayerDrawer({ player, onClose }: { player: Player | null; onClose: () 
           </Card>
         </div>
 
-        {/* Records snapshot */}
-        <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {(player.records || []).map((r, i) => (
-            <Card key={i} title={`${r.event} — Records & Best`}>
-              <div className="flex flex-col gap-2 text-sm">
-                <KeyVal k="World Record" v={r.worldRecord} />
-                {r.regionalRecord && <KeyVal k="Regional Record" v={r.regionalRecord} />}
-                {r.best?.time && (
-                  <>
-                    <KeyVal k="Best Time" v={r.best.time} />
-                    <KeyVal k="Date/Place" v={r.best.datePlace} />
-                    {r.best.rank && <KeyVal k="Best Rank" v={r.best.rank} />}
-                  </>
-                )}
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {/* Camps timeline */}
+        {/* Camps */}
         <div className="mt-6">
           <Card title="Camps & Competitions Plan">
             <MiniTable<CampRow>
@@ -483,18 +409,19 @@ function PlayerDrawer({ player, onClose }: { player: Player | null; onClose: () 
       </div>
     </div>
   );
-}
+};
 
 function labelForSport(key: SportKey) {
   return SPORTS.find((s) => s.key === key)?.label ?? key;
 }
 
 // ---------- Main App
-export default function App() {
+const App: React.FC = () => {
   const rosterBySport = useRosterBySport(PLAYERS);
   const [active, setActive] = useState<SportKey>("para_athletics");
   const [query, setQuery] = useState("");
-  const [focus, setFocus] = useState<Player | null>(PLAYERS[0]); // open Mohammad by default
+  // Open MAIN page first (drawer closed)
+  const [focus, setFocus] = useState<Player | null>(null);
 
   const filtered = (rosterBySport[active] || []).filter((p) =>
     [p.name, p.events?.join(" ")].join(" ").toLowerCase().includes(query.toLowerCase())
@@ -508,13 +435,10 @@ export default function App() {
       <header className="sticky top-0 z-40 backdrop-blur bg-white/70 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* Club logo */}
             <img src="/logo.png" alt="Club Logo" className="h-10 w-auto object-contain" />
             <div>
               <h1 className={`text-lg font-bold ${brand.blueText}`}>Paralympic Champion Project</h1>
-              <p className="text-xs text-slate-500">
-                Los Angeles 2028 — Dubai Club for People of Determination
-              </p>
+              <p className="text-xs text-slate-500">Los Angeles 2028 — Dubai Club for People of Determination</p>
             </div>
           </div>
           <div className="text-right">
@@ -525,12 +449,12 @@ export default function App() {
         <div className={`h-1 ${brand.grad}`} />
       </header>
 
-      {/* Featured banner (always visible) */}
+      {/* Featured banner always visible */}
       <div className="max-w-7xl mx-auto px-4">
-        <FeaturedAthlete p={PLAYERS[0]} />
+        <FeaturedAthlete p={PLAYERS[0]} onOpenProfile={() => setFocus(PLAYERS[0])} />
       </div>
 
-      {/* Sport Tabs */}
+      {/* Tabs + toolbar */}
       <div className="max-w-7xl mx-auto px-4 mt-4">
         <div className="flex flex-wrap gap-2">
           {SPORTS.map((s) => (
@@ -546,15 +470,12 @@ export default function App() {
             >
               {s.label}
               {s.status === "new_targeted" && (
-                <span className="ml-2">
-                  <Pill tone="new">NEW</Pill>
-                </span>
+                <span className="ml-2"><Pill tone="new">NEW</Pill></span>
               )}
             </button>
           ))}
         </div>
 
-        {/* Toolbar */}
         <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm">
             <Pill>Long List: {longListCount} athletes</Pill>
@@ -568,12 +489,7 @@ export default function App() {
               placeholder="Search athlete by name or event…"
               className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm min-w-[260px]"
             />
-            <button
-              className="px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white hover:bg-slate-50"
-              onClick={() => setQuery("")}
-            >
-              Clear
-            </button>
+            <button className="px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white hover:bg-slate-50" onClick={() => setQuery("")}>Clear</button>
           </div>
         </div>
 
@@ -581,9 +497,7 @@ export default function App() {
         <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.length === 0 && (
             <Card>
-              <div className="text-center py-10 text-slate-500">
-                No athletes yet in {labelForSport(active)}. Add them in the data section.
-              </div>
+              <div className="text-center py-10 text-slate-500">No athletes yet in {labelForSport(active)}. Add them in the data section.</div>
             </Card>
           )}
 
@@ -591,18 +505,10 @@ export default function App() {
             <Card key={p.id}>
               <div className="flex items-start gap-4">
                 {p.photo ? (
-                  <img
-                    src={p.photo}
-                    alt={`${p.name} photo`}
-                    className="h-16 w-16 rounded-xl object-cover border border-slate-200"
-                  />
+                  <img src={p.photo} alt={`${p.name} photo`} className="h-16 w-16 rounded-xl object-cover border border-slate-200" />
                 ) : (
                   <div className="h-16 w-16 rounded-xl bg-slate-100 grid place-items-center text-slate-500 text-xl">
-                    {p.name
-                      .split(" ")
-                      .map((w) => w[0])
-                      .slice(0, 2)
-                      .join("")}
+                    {p.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
                   </div>
                 )}
                 <div className="flex-1">
@@ -610,20 +516,12 @@ export default function App() {
                     <h3 className="font-semibold">{p.name}</h3>
                     {p.classification && <Pill>{p.classification}</Pill>}
                   </div>
-                  <div className="text-sm text-slate-600 mt-1">
-                    {p.events?.join(", ") || "—"}
-                  </div>
+                  <div className="text-sm text-slate-600 mt-1">{p.events?.join(", ") || "—"}</div>
                   <div className="mt-3 flex items-center gap-2">
-                    <button
-                      data-open-profile={p.id}
-                      className={`px-3 py-1.5 rounded-lg text-sm ${brand.accentBtn}`}
-                      onClick={() => setFocus(p)}
-                    >
+                    <button className={`px-3 py-1.5 rounded-lg text-sm ${brand.accentBtn}`} onClick={() => setFocus(p)}>
                       View Profile
                     </button>
-                    <button className="px-3 py-1.5 rounded-lg text-sm border border-slate-200 bg-white">
-                      Add to Short List
-                    </button>
+                    <button className="px-3 py-1.5 rounded-lg text-sm border border-slate-200 bg-white">Add to Short List</button>
                   </div>
                 </div>
               </div>
@@ -655,13 +553,13 @@ export default function App() {
         </div>
 
         {/* Footer */}
-        <footer className="py-10 text-center text-xs text-slate-500">
-          © {new Date().getFullYear()} Paralympic Champion — LA 2028 Preparation
-        </footer>
+        <footer className="py-10 text-center text-xs text-slate-500">© {new Date().getFullYear()} Paralympic Champion — LA 2028 Preparation</footer>
       </div>
 
       {/* Drawer */}
       <PlayerDrawer player={focus} onClose={() => setFocus(null)} />
     </div>
   );
-}
+};
+
+export default App;
